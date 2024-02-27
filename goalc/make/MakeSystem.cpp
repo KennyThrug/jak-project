@@ -102,6 +102,7 @@ MakeSystem::MakeSystem(const std::optional<REPL::Config> repl_config, const std:
   add_tool<SubtitleTool>();
   add_tool<SubtitleV2Tool>();
   add_tool<BuildLevelTool>();
+  add_tool<BuildLevel2Tool>();
 }
 
 /*!
@@ -136,7 +137,7 @@ goos::Object MakeSystem::handle_defstep(const goos::Object& form,
     step->outputs.push_back(m_path_map.apply_remaps(obj.as_string()->data));
   });
 
-  step->tool = args.get_named("tool").as_symbol()->name;
+  step->tool = args.get_named("tool").as_symbol().name_ptr;
 
   if (m_tools.find(step->tool) == m_tools.end()) {
     throw std::runtime_error(fmt::format("The tool {} is unknown.", step->tool));
@@ -205,7 +206,7 @@ goos::Object MakeSystem::handle_basename(const goos::Object& form,
   va_check(form, args, {goos::ObjectType::STRING}, {});
   fs::path input(args.unnamed.at(0).as_string()->data);
 
-  return goos::StringObject::make_new(input.filename().u8string());
+  return goos::StringObject::make_new(input.filename().string());
 }
 
 goos::Object MakeSystem::handle_stem(const goos::Object& form,
@@ -215,7 +216,7 @@ goos::Object MakeSystem::handle_stem(const goos::Object& form,
   va_check(form, args, {goos::ObjectType::STRING}, {});
   fs::path input(args.unnamed.at(0).as_string()->data);
 
-  return goos::StringObject::make_new(input.stem().u8string());
+  return goos::StringObject::make_new(input.stem().string());
 }
 
 goos::Object MakeSystem::handle_get_gsrc_path(const goos::Object& form,
@@ -232,7 +233,7 @@ goos::Object MakeSystem::handle_get_gsrc_path(const goos::Object& form,
   if (m_gsrc_files.count(file_name) != 0) {
     return goos::StringObject::make_new(m_gsrc_files.at(file_name));
   } else {
-    return goos::SymbolObject::make_new(m_goos.reader.symbolTable, "#f");
+    return goos::Object::make_symbol(&m_goos.reader.symbolTable, "#f");
   }
 }
 
@@ -275,7 +276,7 @@ goos::Object MakeSystem::handle_set_gsrc_folder(
   auto src_files = file_util::find_files_recursively(folder_scan, std::regex(".*\\.gc"));
 
   for (const auto& path : src_files) {
-    auto name = file_util::base_name_no_ext(path.u8string());
+    auto name = file_util::base_name_no_ext(path.string());
     auto gsrc_path =
         file_util::convert_to_unix_path_separators(file_util::split_path_at(path, m_gsrc_folder));
     // TODO - this is only "safe" because the current OpenGOAL system requires globally unique
@@ -510,4 +511,8 @@ void MakeSystem::set_constant(const std::string& name, const std::string& value)
 
 void MakeSystem::set_constant(const std::string& name, bool value) {
   m_goos.set_global_variable_to_symbol(name, value ? "#t" : "#f");
+}
+
+void MakeSystem::set_constant(const std::string& name, int value) {
+  m_goos.set_global_variable_to_int(name, value);
 }

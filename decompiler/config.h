@@ -116,10 +116,12 @@ struct Config {
   bool process_subtitle_text = false;
   bool process_subtitle_images = false;
   bool dump_art_group_info = false;
+  bool dump_joint_geo_info = false;
   bool rip_levels = false;
   bool extract_collision = false;
   bool find_functions = false;
   bool read_spools = false;
+  bool ignore_var_name_casts = false;
 
   bool write_hex_near_instructions = false;
   bool hexdump_code = false;
@@ -165,14 +167,20 @@ struct Config {
 
   std::vector<std::string> levels_to_extract;
   bool levels_extract;
+  bool save_texture_pngs = false;
 
   DecompileHacks hacks;
 
-  std::unordered_map<std::string, std::string> art_groups_by_file;
-  std::unordered_map<std::string, std::string> art_groups_by_function;
+  std::unordered_map<std::string, std::string> art_group_type_remap;
+  std::unordered_map<std::string, std::unordered_map<std::string, std::string>>
+      art_group_file_override;
   std::unordered_map<std::string, std::unordered_map<int, std::string>> art_group_info_dump;
+  std::unordered_map<std::string, std::unordered_map<int, std::string>> jg_info_dump;
+  std::unordered_map<std::string, std::string> joint_node_hacks;
 
   std::unordered_map<std::string, std::vector<std::string>> import_deps_by_file;
+
+  bool rip_collision = false;
 };
 
 Config read_config_file(const fs::path& path_to_config_file,

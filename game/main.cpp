@@ -14,6 +14,7 @@
 #include "common/util/FileUtil.h"
 #include "common/util/dialogs.h"
 #include "common/util/os.h"
+#include "common/util/term_util.h"
 #include "common/util/unicode_util.h"
 #include "common/versions/versions.h"
 
@@ -33,8 +34,8 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
  * Set up logging system to log to file.
  * @param verbose : should we print debug-level messages to stdout?
  */
-void setup_logging(bool verbose) {
-  lg::set_file(file_util::get_file_path({"log", "game.log"}));
+void setup_logging(const std::string& game_name, bool verbose, bool disable_ansi_colors) {
+  lg::set_file(game_name);
   if (verbose) {
     lg::set_file_level(lg::level::debug);
     lg::set_stdout_level(lg::level::debug);
@@ -43,6 +44,9 @@ void setup_logging(bool verbose) {
     lg::set_file_level(lg::level::debug);
     lg::set_stdout_level(lg::level::warn);
     lg::set_flush_level(lg::level::warn);
+  }
+  if (disable_ansi_colors) {
+    lg::disable_ansi_colors();
   }
   lg::initialize();
 }
@@ -66,11 +70,12 @@ std::string game_arg_documentation() {
   output += "  -level [name]  Used to inform the game to boot a specific level the default level is `#f`\n";
   // Jak 1 Related
   output += fmt::format(fmt::emphasis::bold | fmt::fg(fmt::color::orange), "Jak 1:\n");
-  output += "  -demo          Used to pass the message `demo` to the gkernel in the DebugBootMessage (instead of play)\n";
+  output += "  -demo          Boot the game in demo mode\n";
   // Jak 2 only
   output += fmt::format(fmt::emphasis::bold | fmt::fg(fmt::color::purple), "Jak 2:\n");
-  output += "  -kiosk         A demo mode, TODO on specifics\n";
-  output += "  -preview       A demo mode, TODO on specifics\n";
+  output += "  -demo          Boot the game in demo mode\n";
+  output += "  -kiosk         Boot the game in kiosk demo mode\n";
+  output += "  -preview       Boot the game in preview demo mode\n";
   output += "  -debug-boot    Used to boot the game in retail mode, but with debug segments\n";
   output += "  -user [name]   Specify the debugging username, the default is `unknown`\n";
   output += "  -art [name]    Specify the art-group name to set `DebugBootArtGroup`, there is no default\n";
@@ -90,8 +95,8 @@ int main(int argc, char** argv) {
   bool verbose_logging = false;
   bool disable_avx2 = false;
   bool disable_display = false;
-  bool enable_debug_vm = false;
   bool enable_profiling = false;
+  std::string profile_until_event = "";
   std::string gpu_test = "";
   std::string gpu_test_out_path = "";
   int port_number = -1;
@@ -104,10 +109,11 @@ int main(int argc, char** argv) {
   app.add_flag(
       "--port", port_number,
       "Specify port number for listener connection (default is 8112 for Jak 1 and 8113 for Jak 2)");
-  app.add_flag("--no-avx2", verbose_logging, "Disable AVX2 for testing");
+  app.add_flag("--no-avx2", disable_avx2, "Disable AVX2 for testing");
   app.add_flag("--no-display", disable_display, "Disable video display");
-  app.add_flag("--vm", enable_debug_vm, "Enable debug PS2 VM (defaulted to off)");
   app.add_flag("--profile", enable_profiling, "Enables profiling immediately from startup");
+  app.add_option("--profile-until-event", profile_until_event,
+                 "Stops recording profile events once an event with this name is seen");
   app.add_option("--gpu-test", gpu_test,
                  "Tests for minimum graphics requirements.  Valid Options are: [opengl]");
   app.add_option("--gpu-test-out-path", gpu_test_out_path,
@@ -117,11 +123,12 @@ int main(int argc, char** argv) {
   app.footer(game_arg_documentation());
   app.add_option("Game Args", game_args,
                  "Remaining arguments (after '--') that are passed-through to the game itself");
+  define_common_cli_arguments(app);
   app.allow_extras();
   CLI11_PARSE(app, argc, argv);
 
   if (show_version) {
-    lg::print(build_revision());
+    lg::print("{}", build_revision());
     return 0;
   }
 
@@ -137,10 +144,10 @@ int main(int argc, char** argv) {
   }
 
   prof().set_enable(enable_profiling);
+  prof().set_waiting_for_event(profile_until_event);
 
   // Create struct with all non-kmachine handled args to pass to the runtime
   GameLaunchOptions game_options;
-  game_options.disable_debug_vm = !enable_debug_vm;
   game_options.disable_display = disable_display;
   game_options.game_version = game_name_to_version(game_name);
   game_options.server_port =
@@ -187,7 +194,7 @@ int main(int argc, char** argv) {
   }
 
   try {
-    setup_logging(verbose_logging);
+    setup_logging(game_name, verbose_logging, _cli_flag_disable_ansi);
   } catch (const std::exception& e) {
     lg::error("Failed to setup logging: {}", e.what());
     return 1;

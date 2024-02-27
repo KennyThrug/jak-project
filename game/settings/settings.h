@@ -18,6 +18,7 @@ struct DebugSettings {
   bool monospaced_font = true;
   bool alternate_style = false;
   bool ignore_hide_imgui = false;
+  bool treat_pad0_as_pad1 = false;
 
   std::vector<DebugTextFilter> text_filters = {};
   bool text_check_range = false;
@@ -55,6 +56,9 @@ struct InputSettings {
   std::unordered_map<std::string, InputBindingGroups> controller_binds;
   InputBindingGroups keyboard_binds;
   InputBindingGroups mouse_binds;
+  bool keyboard_enabled = false;
+  bool keyboard_temp_enabled =
+      false;  // not saved or restored, flips on if no controllers are detected
 
   void save_settings();
 };

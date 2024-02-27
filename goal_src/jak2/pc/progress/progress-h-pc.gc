@@ -9,34 +9,52 @@
 |#
 
 
-(deftype progress-global-state-pc (basic)
-  ((decoration-draw-time  uint64)
-   
-   (display-mode-choice-index  int8)
-   
-   (aspect-ratio-choice-index  int8)
+(defmacro push-and-set-state (progress state)
+  `(begin
+    (push-state ,progress)
+    (set-next-state ,progress ,state 0)))
+
+(deftype menu-aspect-ratio-custom-option (menu-option)
+  ()
+  )
+
+(deftype menu-frame-rate-disclaimer-option (menu-option)
+  ()
+  )
+
+(deftype menu-exit-game-option (menu-yes-no-option)
+  ()
+  )
+
+(deftype menu-resolution-option (menu-option)
+  ((last-move   time-frame)
+   (selected-index  int16)
+   (scroll-index    float)
+   (valid?    symbol)
+
+   ;; OS state kept for drawing later, avoids desync and duplicate fetching
+   (num-resolutions   int)
+   (win-aspect  float)
+   (win-w   int64)
+   (win-h   int64)
    )
   )
 
+(deftype menu-music-player-option (menu-option)
+  ((last-move   time-frame)
 
-(defmacro when-not-drawn-decoration (&rest body)
-  `(when (> (get-integral-current-time) (-> *progress-state-pc* decoration-draw-time))
-      ,@body
-      (set! (-> *progress-state-pc* decoration-draw-time) (get-integral-current-time))))
+   ;; player params
+   (music-index     int16)
+   (flava-index     int8)
+   (excitement      int8)
 
+   ;; scroll
+   (current-scroll  float)
+   (max-scroll      float)
 
-(deftype menu-display-mode-option (menu-option)
-  ()
-  )
-
-
-(deftype menu-aspect-ratio-pc-option (menu-option)
-  ()
-  )
-
-
-(deftype menu-on-off-vsync-option (menu-on-off-option)
-  ()
+   ;; sprites 0-3 used to show level icon
+   (sprites   hud-sprite 4 :inline)
+   )
   )
 
 

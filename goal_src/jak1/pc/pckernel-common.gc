@@ -29,27 +29,6 @@
   "return the current pckernel version"
   PC_KERNEL_VERSION)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; global variables
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-;; collision renderer things. debug only.
-(define *collision-renderer* #f)
-(define *collision-wireframe* #f)
-(define *collision-mode* (pc-collision-mode mode))
-
-;; todo
-(defenum pc-pat-skip-hack
-  :bitfield #t
-  (noentity 0)
-  (nocamera 1)
-  (noedge   2)
-  (nolineofsight 12)
-  (unknowncamera 13)
-  (unknown 15)
-  )
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; updates
@@ -256,16 +235,15 @@
     ;; now multiply by the brightness setting
     (vector-float*! (-> obj controller-led-color) (-> obj controller-led-color) (-> obj controller-led-brightness))
     ;; now use it as the controller led color
-    (pc-set-controller-led! 0
-                            (the int (lerp-scale 0.0 255.0 (-> obj controller-led-color r) 0.0 1.0))
-                            (the int (lerp-scale 0.0 255.0 (-> obj controller-led-color g) 0.0 1.0))
-                            (the int (lerp-scale 0.0 255.0 (-> obj controller-led-color b) 0.0 1.0)))
+    (let ((led-rgba (new 'static 'rgba :r (the int (lerp-scale 0.0 255.0 (-> obj controller-led-color r) 0.0 1.0))
+                                       :g (the int (lerp-scale 0.0 255.0 (-> obj controller-led-color g) 0.0 1.0))
+                                       :b (the int (lerp-scale 0.0 255.0 (-> obj controller-led-color b) 0.0 1.0))
+                                       :a #x80)))
+        (set! *display-led-rgba* led-rgba)
+        (pc-set-controller-led! 0 (the-as int (-> led-rgba r)) (the-as int (-> led-rgba g)) (the-as int (-> led-rgba b))))
     )
 
   (none))
-
-;; where we store the input progress for the cheat codes. make sure there's enough space for all cheats.
-(define *pc-cheat-temp* (new 'global 'inline-array 'uint8 PC_CHEAT_MAX))
 
 (defmacro pc-cheat-toggle-and-tune (cheats-var cheat)
   "quickly toggle a cheat code and play an appropriate sound"
@@ -295,14 +273,13 @@
   (update-discord-rpc obj)
 
   ;; update auto-splitter info
-  (when (-> *pc-settings* speedrunner-mode?)
-    (update-speedrun obj))
+  (update-speedrun obj)
 
   (when (not (-> obj use-vis?))
     (update-video-hacks obj)
     )
   (cond
-    ((not (-> *pc-settings* ps2-actor-vis?))
+    ((not (-> obj ps2-actor-vis?))
       ;; kinda overkill.
       (set! (-> *ACTOR-bank* birth-dist) (meters 10000))
       (set! (-> *ACTOR-bank* pause-dist) (meters 10000))
@@ -398,18 +375,20 @@
   (pc-ignore-background-controller-events! val)
   (none))
 
-(defmethod set-enable-keyboard! pc-settings ((obj pc-settings) (val symbol))
-  "sets whether to ignore keyboard input events"
-  (set! (-> obj keyboard-enabled?) val)
-  (pc-set-keyboard-enabled! val)
-  (none))
-
 (defmethod update-mouse-controls! pc-settings ((obj pc-settings))
   "Uses whatever is set on the [[pc-settings]] to update the runtime on how it should interpret mouse events"
   (pc-set-mouse-options! (-> obj mouse-enabled?) (-> obj mouse-camera?) (-> obj mouse-movement?))
   (pc-set-mouse-camera-sens! (-> obj mouse-xsens) (-> obj mouse-ysens))
   (pc-set-auto-hide-cursor! (-> obj auto-hide-cursor?))
   (none))
+
+
+(defmethod debug-font-scale-factor pc-settings ((this pc-settings))
+  "return the debug font scale factor to be used."
+  (declare (inline))
+  (if (-> this debug-font-scale-auto?)
+      (/ (-> this debug-font-scale) (max 1.0 (/ (the float (get-current-game-height this)) PC_BASE_HEIGHT)))
+      (-> this debug-font-scale)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -602,8 +581,8 @@
             ;; remember to delete this when major changes to the version number are made
             (when (and (= PC_KERNEL_VER_MAJOR 1)
                        (= PC_KERNEL_VER_MINOR 10)
-                       (or (!= PC_KERNEL_VER_BUILD (-> version build))
-                           (!= PC_KERNEL_VER_REVISION (-> version revision))))
+                       (or (> 3 (-> version build))
+                           (and (= 3 (-> version build)) (> 1 (-> version revision)))))
                 ;; 1.10 upgrade: turn envmap on
                 (set! (-> obj force-envmap?) #t)
                 )
@@ -676,13 +655,16 @@
     (("lod-force-actor") (set! (-> obj lod-force-actor) (file-stream-read-int file)))
     (("game-language") (set-game-language! obj (the-as language-enum (file-stream-read-int file))))
     (("subtitle-speaker") (set! (-> obj subtitle-speaker?) (file-stream-read-symbol file)))
+    (("territory") (set! (-> obj territory) (file-stream-read-int file)))
 
     (("ignore-controller-win-unfocused?") (set-ignore-controller-in-bg! obj (file-stream-read-symbol file)))
-    (("controller-hp-led?") (set! (-> obj controller-hp-led?) (file-stream-read-symbol file)))
-    (("controller-eco-led?") (set! (-> obj controller-eco-led?) (file-stream-read-symbol file)))
-    (("controller-heat-led?") (set! (-> obj controller-heat-led?) (file-stream-read-symbol file)))
+    (("controller-hp-led?") (set! (-> obj controller-led-hp?) (file-stream-read-symbol file)))
+    (("controller-eco-led?") (set! (-> obj controller-led-eco?) (file-stream-read-symbol file)))
+    (("controller-heat-led?") (set! (-> obj controller-led-heat?) (file-stream-read-symbol file)))
     (("stick-deadzone") (set! (-> obj stick-deadzone) (file-stream-read-float file)))
-    (("keyboard-enabled?") (set-enable-keyboard! obj (file-stream-read-symbol file)))
+    ;; TODO - remove this eventually, setting moved into json input-settings
+    ;; has to stay here or the settings parsing code explodes
+    (("keyboard-enabled?") (file-stream-read-symbol file))
     (("mouse-enabled?") (set! (-> obj mouse-enabled?) (file-stream-read-symbol file)))
     (("mouse-camera?") (set! (-> obj mouse-camera?) (file-stream-read-symbol file)))
     (("mouse-xsens") (set! (-> obj mouse-xsens) (file-stream-read-float file)))
@@ -695,6 +677,7 @@
     (("ps2-music?") (set! (-> obj ps2-music?) (file-stream-read-symbol file)))
     (("ps2-se?") (set! (-> obj ps2-se?) (file-stream-read-symbol file)))
     (("ps2-hints?") (set! (-> obj ps2-hints?) (file-stream-read-symbol file)))
+    (("ps2-shadow?") (set! (-> obj ps2-shadow?) (file-stream-read-symbol file)))
     (("ps2-lod-dist?") (set! (-> obj ps2-lod-dist?) (file-stream-read-symbol file)))
     (("force-envmap?") (set! (-> obj force-envmap?) (file-stream-read-symbol file)))
     (("force-actors?") (set! (-> obj ps2-actor-vis?) (not (file-stream-read-symbol file))))
@@ -713,10 +696,13 @@
     (("controller-led-brightness") (set! (-> obj controller-led-brightness) (file-stream-read-float file)))
     (("controller-led-min-brightness") (set! (-> obj controller-led-min-brightness) (file-stream-read-float file)))
     (("controller-led-max-brightness") (set! (-> obj controller-led-max-brightness) (file-stream-read-float file)))
+
+    ;; debug
+    (("debug-font-scale") (set! (-> obj debug-font-scale) (file-stream-read-float file)))
+    (("debug-font-scale-auto?") (set! (-> obj debug-font-scale-auto?) (file-stream-read-symbol file)))
     (("panic")
       (when (file-stream-read-symbol file)
         (reset obj #t)
-        (set-display-mode! obj #f #t)
         (return #f)
         )
       )
@@ -738,6 +724,8 @@
   (format file "  (letterbox ~A)~%" (-> obj letterbox?))
   (format file "  (vsync ~A)~%" (-> obj vsync?))
   ;(format file "  (font-scale ~f)~%" (-> obj font-scale))
+  (format file "  (debug-font-scale ~f)~%" (-> obj debug-font-scale))
+  (format file "  (debug-font-scale-auto? ~A)~%" (-> obj debug-font-scale-auto?))
 
   ;(format file "  (audio-latency-ms ~D)~%" (-> obj audio-latency-ms))
   ;(format file "  (audio-pan-override ~f)~%" (-> obj audio-pan-override))
@@ -755,14 +743,13 @@
   (format file "  (lod-force-actor ~D)~%" (-> obj lod-force-actor))
 
   (format file "  (ignore-controller-win-unfocused? ~A)~%" (-> obj ignore-controller-win-unfocused?))
-  (format file "  (controller-hp-led? ~A)~%" (-> obj controller-hp-led?))
-  (format file "  (controller-eco-led? ~A)~%" (-> obj controller-eco-led?))
-  (format file "  (controller-heat-led? ~A)~%" (-> obj controller-heat-led?))
+  (format file "  (controller-hp-led? ~A)~%" (-> obj controller-led-hp?))
+  (format file "  (controller-eco-led? ~A)~%" (-> obj controller-led-eco?))
+  (format file "  (controller-heat-led? ~A)~%" (-> obj controller-led-heat?))
   (format file "  (controller-led-brightness ~f)~%" (-> obj controller-led-brightness))
   (format file "  (controller-led-min-brightness ~f)~%" (-> obj controller-led-min-brightness))
   (format file "  (controller-led-max-brightness ~f)~%" (-> obj controller-led-max-brightness))
   (format file "  (stick-deadzone ~f)~%" (-> obj stick-deadzone))
-  (format file "  (keyboard-enabled? ~A)~%" (-> obj keyboard-enabled?))
   (format file "  (mouse-enabled? ~A)~%" (-> obj mouse-enabled?))
   (format file "  (mouse-camera? ~A)~%" (-> obj mouse-camera?))
   (format file "  (mouse-xsens ~f)~%" (-> obj mouse-xsens))
@@ -775,6 +762,7 @@
   (format file "  (ps2-music? ~A)~%" (-> obj ps2-music?))
   (format file "  (ps2-se? ~A)~%" (-> obj ps2-se?))
   (format file "  (ps2-hints? ~A)~%" (-> obj ps2-hints?))
+  (format file "  (ps2-shadow? ~A)~%" (-> obj ps2-shadow?))
   (format file "  (ps2-lod-dist? ~A)~%" (-> obj ps2-lod-dist?))
   (format file "  (force-envmap? ~A)~%" (-> obj force-envmap?))
   (format file "  (use-vis? ~A)~%" (-> obj use-vis?))
@@ -790,6 +778,7 @@
   (format file "  (hinttitles? ~A)~%" (-> obj hinttitles?))
   (format file "  (game-language ~D)~%" (get-game-language obj))
   (format file "  (subtitle-speaker ~A)~%" (-> obj subtitle-speaker?))
+  (format file "  (territory ~D)~%" (-> obj territory))
   0)
 
 (defmethod write-to-file pc-settings ((obj pc-settings) (filename string))
@@ -818,24 +807,36 @@
 (defmethod load-settings pc-settings ((obj pc-settings))
   "load"
   (format (clear *pc-temp-string-1*) "~S/pc-settings.gc" *pc-settings-folder*)
-  (if (pc-filepath-exists? *pc-temp-string-1*)
-    (begin
+  (cond
+    ((pc-filepath-exists? *pc-temp-string-1*)
       (format 0 "[PC] PC Settings found at '~S'...loading!~%" *pc-temp-string-1*)
       (unless (read-from-file obj *pc-temp-string-1*)
         (format 0 "[PC] PC Settings found at '~S' but could not be loaded, using defaults!~%" *pc-temp-string-1*)
-        (reset obj #t)))
-    (format 0 "[PC] PC Settings not found at '~S'...initializing with defaults!~%" *pc-temp-string-1*))
+        (reset obj #t)
+        )
+      )
+    (else
+      (format 0 "[PC] PC Settings not found at '~S'...initializing with defaults!~%" *pc-temp-string-1*)
+      (reset obj #t)
+      )
+    )
   0)
+
+(defmethod initialize pc-settings ((obj pc-settings))
+  "initial initialize method to be run after allocating"
+  ;; load defaults not covered by the file
+  (reset obj #f)
+  ;; if saved settings are corrupted or not found, the object will be fully reset to use all defaults
+  (load-settings obj)
+  ;; any post-operations that need to be done after loading
+  (set! (-> obj keyboard-enabled?) (pc-get-keyboard-enabled?))
+  (update-mouse-controls! obj)
+  obj)
 
 (defmethod new pc-settings ((allocation symbol) (type-to-make type))
   "make a new pc-settings"
   (let ((obj (object-new allocation type-to-make (the-as int (-> type-to-make size)))))
-    ;; load defaults not covered by the file
-    (reset obj #f)
-    ;; if saved settings are corrupted or not found, the object will be fully reset to use all defaults
-    (load-settings obj)
-    ;; any post-operations that need to be done after loading
-    (update-mouse-controls! obj)
+    (initialize obj)
     obj))
 
 
@@ -851,6 +852,7 @@
    (scroll-y-max int16)
    (entity entity)
    (show-actor-info symbol)
+   (show-long-info symbol)
    )
   (:methods
     (new (symbol type) _type_)
@@ -868,6 +870,7 @@
     (set! (-> obj scroll-y-max) 0)
     (set! (-> obj entity) (the entity #f))
     (set! (-> obj show-actor-info) #f)
+    (set! (-> obj show-long-info) #f)
     obj
     )
   )
@@ -884,6 +887,9 @@
   ;; toggle actor info
   (if (cpad-pressed? pad-idx l3)
     (not! (-> obj show-actor-info)))
+  ;; toggle long info
+  (if (cpad-pressed? pad-idx up)
+    (not! (-> obj show-long-info)))
 
   (minmax! (-> obj scroll-y) 0 (-> obj scroll-y-max))
 

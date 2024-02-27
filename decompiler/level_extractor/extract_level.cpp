@@ -10,7 +10,9 @@
 #include "common/util/string_util.h"
 
 #include "decompiler/level_extractor/BspHeader.h"
+#include "decompiler/level_extractor/extract_actors.h"
 #include "decompiler/level_extractor/extract_collide_frags.h"
+#include "decompiler/level_extractor/extract_joint_group.h"
 #include "decompiler/level_extractor/extract_merc.h"
 #include "decompiler/level_extractor/extract_shrub.h"
 #include "decompiler/level_extractor/extract_tfrag.h"
@@ -114,28 +116,51 @@ void extract_art_groups_from_level(const ObjectFileDB& db,
                                    const TextureDB& tex_db,
                                    const std::vector<level_tools::TextureRemap>& tex_remap,
                                    const std::string& dgo_name,
-                                   tfrag3::Level& level_data) {
+                                   tfrag3::Level& level_data,
+                                   std::map<std::string, level_tools::ArtData>& art_group_data) {
   const auto& files = db.obj_files_by_dgo.at(dgo_name);
   for (const auto& file : files) {
     if (file.name.length() > 3 && !file.name.compare(file.name.length() - 3, 3, "-ag")) {
       const auto& ag_file = db.lookup_record(file);
       extract_merc(ag_file, tex_db, db.dts, tex_remap, level_data, false, db.version());
+      extract_joint_group(ag_file, db.dts, db.version(), art_group_data);
     }
   }
 }
 
-std::vector<level_tools::TextureRemap> extract_bsp_from_level(const ObjectFileDB& db,
-                                                              const TextureDB& tex_db,
-                                                              const std::string& dgo_name,
-                                                              const DecompileHacks& hacks,
-                                                              bool extract_collision,
-                                                              tfrag3::Level& level_data) {
+std::vector<level_tools::TextureRemap> extract_tex_remap(const ObjectFileDB& db,
+                                                         const std::string& dgo_name) {
   auto bsp_rec = get_bsp_file(db.obj_files_by_dgo.at(dgo_name), dgo_name);
   if (!bsp_rec) {
     lg::warn("Skipping extract for {} because the BSP file was not found", dgo_name);
     return {};
   }
-  std::string level_name = bsp_rec->name.substr(0, bsp_rec->name.length() - 4);
+  std::string level_name = bsp_rec->name;
+
+  lg::info("Processing level {} ({})", dgo_name, level_name);
+  const auto& bsp_file = db.lookup_record(*bsp_rec);
+  bool ok = is_valid_bsp(bsp_file.linked_data);
+  ASSERT(ok);
+
+  level_tools::DrawStats draw_stats;
+  level_tools::BspHeader bsp_header;
+  bsp_header.read_from_file(bsp_file.linked_data, db.dts, &draw_stats, db.version(), true);
+
+  return bsp_header.texture_remap_table;
+}
+
+level_tools::BspHeader extract_bsp_from_level(const ObjectFileDB& db,
+                                              const TextureDB& tex_db,
+                                              const std::string& dgo_name,
+                                              const Config& config,
+                                              tfrag3::Level& level_data) {
+  auto hacks = config.hacks;
+  auto bsp_rec = get_bsp_file(db.obj_files_by_dgo.at(dgo_name), dgo_name);
+  if (!bsp_rec) {
+    lg::warn("Skipping extract for {} because the BSP file was not found", dgo_name);
+    return {};
+  }
+  std::string level_name = bsp_rec->name;
 
   lg::info("Processing level {} ({})", dgo_name, level_name);
   const auto& bsp_file = db.lookup_record(*bsp_rec);
@@ -198,21 +223,28 @@ std::vector<level_tools::TextureRemap> extract_bsp_from_level(const ObjectFileDB
       ASSERT(as_shrub_tree);
       extract_shrub(as_shrub_tree, fmt::format("{}-{}-shrub", dgo_name, i++),
                     bsp_header.texture_remap_table, tex_db, {}, level_data, false, db.version());
-    } else if (draw_tree->my_type() == "drawable-tree-collide-fragment" && extract_collision) {
+    } else if (draw_tree->my_type() == "drawable-tree-collide-fragment" &&
+               config.extract_collision) {
       auto as_collide_frags =
           dynamic_cast<level_tools::DrawableTreeCollideFragment*>(draw_tree.get());
       ASSERT(as_collide_frags);
       ASSERT(!got_collide);
       got_collide = true;
-      extract_collide_frags(as_collide_frags, all_ties, fmt::format("{}-{}-collide", dgo_name, i++),
-                            level_data, false);
+      extract_collide_frags(as_collide_frags, all_ties, config,
+                            fmt::format("{}-{}-collide", dgo_name, i++), level_data);
     } else {
       lg::print("  unsupported tree {}\n", draw_tree->my_type());
     }
   }
+
+  if (bsp_header.collide_hash.num_items) {
+    ASSERT(!got_collide);
+    extract_collide_frags(bsp_header.collide_hash, all_ties, config,
+                          fmt::format("{}-{}-collide", dgo_name, i++), db.dts, level_data);
+  }
   level_data.level_name = level_name;
 
-  return bsp_header.texture_remap_table;
+  return bsp_header;
 }
 
 /*!
@@ -223,8 +255,8 @@ std::vector<level_tools::TextureRemap> extract_bsp_from_level(const ObjectFileDB
 void extract_common(const ObjectFileDB& db,
                     const TextureDB& tex_db,
                     const std::string& dgo_name,
-                    bool dump_levels,
-                    const fs::path& output_folder) {
+                    const fs::path& output_folder,
+                    const Config& config) {
   if (db.obj_files_by_dgo.count(dgo_name) == 0) {
     lg::warn("Skipping common extract for {} because the DGO was not part of the input", dgo_name);
     return;
@@ -238,8 +270,9 @@ void extract_common(const ObjectFileDB& db,
   confirm_textures_identical(tex_db);
 
   tfrag3::Level tfrag_level;
+  std::map<std::string, level_tools::ArtData> art_group_data;
   add_all_textures_from_level(tfrag_level, dgo_name, tex_db);
-  extract_art_groups_from_level(db, tex_db, {}, dgo_name, tfrag_level);
+  extract_art_groups_from_level(db, tex_db, {}, dgo_name, tfrag_level, art_group_data);
 
   Serializer ser;
   tfrag_level.serialize(ser);
@@ -254,31 +287,31 @@ void extract_common(const ObjectFileDB& db,
       output_folder / fmt::format("{}.fr3", dgo_name.substr(0, dgo_name.length() - 4)),
       compressed.data(), compressed.size());
 
-  if (dump_levels) {
+  if (config.rip_levels) {
     auto file_path = file_util::get_jak_project_dir() / "glb_out" / "common.glb";
     file_util::create_dir_if_needed_for_file(file_path);
-    save_level_foreground_as_gltf(tfrag_level, file_path);
+    save_level_foreground_as_gltf(tfrag_level, art_group_data, file_path);
   }
 }
 
 void extract_from_level(const ObjectFileDB& db,
                         const TextureDB& tex_db,
                         const std::string& dgo_name,
-                        const DecompileHacks& hacks,
-                        bool dump_level,
-                        bool extract_collision,
-                        const fs::path& output_folder) {
+                        const Config& config,
+                        const fs::path& output_folder,
+                        const fs::path& entities_folder) {
   if (db.obj_files_by_dgo.count(dgo_name) == 0) {
     lg::warn("Skipping extract for {} because the DGO was not part of the input", dgo_name);
     return;
   }
   tfrag3::Level level_data;
+  std::map<std::string, level_tools::ArtData> art_group_data;
   add_all_textures_from_level(level_data, dgo_name, tex_db);
 
   // the bsp header file data
-  auto tex_remap =
-      extract_bsp_from_level(db, tex_db, dgo_name, hacks, extract_collision, level_data);
-  extract_art_groups_from_level(db, tex_db, tex_remap, dgo_name, level_data);
+  auto bsp_header = extract_bsp_from_level(db, tex_db, dgo_name, config, level_data);
+  extract_art_groups_from_level(db, tex_db, bsp_header.texture_remap_table, dgo_name, level_data,
+                                art_group_data);
 
   //If the dgo is not snowy, then add snowy assets for flutflut
   if (dgo_name != "JUB.DGO" && db.obj_files_by_dgo.count(dgo_name) != 0) {
@@ -309,7 +342,7 @@ void extract_from_level(const ObjectFileDB& db,
       output_folder / fmt::format("{}.fr3", dgo_name.substr(0, dgo_name.length() - 4)),
       compressed.data(), compressed.size());
 
-  if (dump_level) {
+  if (config.rip_levels) {
     auto back_file_path = file_util::get_jak_project_dir() / "glb_out" /
                           fmt::format("{}_background.glb", level_data.level_name);
     file_util::create_dir_if_needed_for_file(back_file_path);
@@ -317,8 +350,10 @@ void extract_from_level(const ObjectFileDB& db,
     auto fore_file_path = file_util::get_jak_project_dir() / "glb_out" /
                           fmt::format("{}_foreground.glb", level_data.level_name);
     file_util::create_dir_if_needed_for_file(fore_file_path);
-    save_level_foreground_as_gltf(level_data, fore_file_path);
+    save_level_foreground_as_gltf(level_data, art_group_data, fore_file_path);
   }
+  file_util::write_text_file(entities_folder / fmt::format("{}_actors.json", level_data.level_name),
+                             extract_actors_to_json(bsp_header.actors));
 }
 
 void extract_all_levels(const ObjectFileDB& db,
@@ -326,15 +361,15 @@ void extract_all_levels(const ObjectFileDB& db,
                         const std::vector<std::string>& dgo_names,
                         const std::string& common_name,
                         const Config& config,
-                        bool debug_dump_level,
-                        bool extract_collision,
                         const fs::path& output_path) {
-  extract_common(db, tex_db, common_name, debug_dump_level, output_path);
+  extract_common(db, tex_db, common_name, output_path, config);
+  auto entities_dir = file_util::get_jak_project_dir() / "decompiler_out" /
+                      game_version_names[config.game_version] / "entities";
+  file_util::create_dir_if_needed(entities_dir);
   SimpleThreadGroup threads;
   threads.run(
       [&](int idx) {
-        extract_from_level(db, tex_db, dgo_names[idx], config.hacks, debug_dump_level, extract_collision,
-                           output_path);
+        extract_from_level(db, tex_db, dgo_names[idx], config, output_path, entities_dir);
       },
       dgo_names.size());
   threads.join();

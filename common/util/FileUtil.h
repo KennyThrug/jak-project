@@ -31,7 +31,9 @@ fs::path get_user_home_dir();
 fs::path get_user_config_dir();
 fs::path get_user_settings_dir(GameVersion game_version);
 fs::path get_user_memcard_dir(GameVersion game_version);
+fs::path get_user_screenshots_dir(GameVersion game_version);
 fs::path get_user_misc_dir(GameVersion game_version);
+fs::path get_user_features_dir(GameVersion game_version);
 fs::path get_jak_project_dir();
 
 bool create_dir_if_needed(const fs::path& path);
@@ -62,9 +64,12 @@ void assert_file_exists(const char* path, const char* error_message);
 bool dgo_header_is_compressed(const std::vector<u8>& data);
 std::vector<u8> decompress_dgo(const std::vector<u8>& data_in);
 FILE* open_file(const fs::path& path, const std::string& mode);
+std::vector<fs::path> find_files_in_dir(const fs::path& dir, const std::regex& pattern);
 std::vector<fs::path> find_files_recursively(const fs::path& base_dir, const std::regex& pattern);
 std::vector<fs::path> find_directories_in_dir(const fs::path& base_dir);
+std::vector<fs::path> sort_filepaths(const std::vector<fs::path>& paths, const bool aescending);
 /// Will overwrite the destination if it exists
 void copy_file(const fs::path& src, const fs::path& dst);
 std::string make_screenshot_filepath(const GameVersion game_version, const std::string& name = "");
+std::string get_majority_file_line_endings(const std::string& file_contents);
 }  // namespace file_util
