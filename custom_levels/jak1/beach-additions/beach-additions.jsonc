@@ -1,0 +1,41 @@
+{
+    "long_name": "beach-additions",
+    "iso_name": "BEACHADD",
+    "nickname": "BCA",
+    "gltf_file": "custom_levels/jak1/beach-additions/beach-additions.glb",
+    
+    "automatic_wall_detection": true,
+    "automatic_wall_angle": 45.0,
+    "double_sided_collide": false,
+
+    "base_id": 103,
+
+    "ambients":[],
+
+    "actors":[
+        {
+            "trans": [-145.32,15.34,-449.19],
+            "etype": "launcher",
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-145.32,15.34,-449.19,10.0],
+            "lump":{
+                "name":"addition-plat-1",
+                "mode": "x101",
+                "spring-height": "125.0000",
+                "vis-dist": "200",
+                "visof": "display actor-vis!"
+            }
+        },
+        {
+            "trans": [-145.32,19.34,-449.19],
+            "etype": "fuel-cell",
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-145.32,19.34,-449.19,10.0],
+            "lump":{
+                "name":"addition-cell-1"
+            }
+        }
+    ]
+}

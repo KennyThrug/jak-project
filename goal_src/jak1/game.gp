@@ -1645,6 +1645,9 @@
 (build-custom-level "forbidden-temple")
 (custom-level-cgo "FTP.DGO" "forbidden-temple/forbidden-temple.gd")
 
+(build-custom-level "beach-additions")
+(custom-level-cgo "BCA.DGO" "beach-additions/beach-additions.gd")
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Game Engine Code
 ;;;;;;;;;;;;;;;;;;;;;
