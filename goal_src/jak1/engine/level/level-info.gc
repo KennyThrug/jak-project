@@ -2049,33 +2049,34 @@
                            :wait-for-load #t
                            )
         )
+;; beach-additions is the long name of the level
 (define beach-additions (new 'static 'level-load-info
                            :index 28
-                           :name 'beach-additions
+                           :name 'beach-additions ;; name is also the long name of the level (don't forget the ' character)
                            :visname 'beach-additions-vis ;; name + -vis
                            :nickname 'bca          ;; nickname
-                           :packages '(beach)
-                           :sound-banks '(beach)
-                           :music-bank 'beach
+                           :packages '()
+                           :sound-banks '()
+                           :music-bank #f
                            :ambient-sounds '()
-                           :mood '*beach-mood*
-                           :mood-func 'update-mood-village1
-                           :ocean '*ocean-map-village1*
-                           :sky #t
+                           :mood '*default-mood*
+                           :mood-func 'update-mood-default
+                           :ocean #f ;;leave as #f
+                           :sky #t ;;leave as #t
                            :sun-fade 1.0
                            :continues '((new 'static 'continue-point
-                                             :name "beach-with-additions"
+                                             :name "beach-with-additions" ;; Name of the checkpoint 
                                              :level 'beach-additions
-                                             :trans (new 'static 'vector :x (meters -62.05) :y (meters 15.88) :z (meters -420.19) :w 1.0)
+                                             :trans (new 'static 'vector :x (meters -94.79) :y (meters 16.26) :z (meters -446.83) :w 1.0)
                                              :quat (new 'static 'quaternion  :w 1.0)
                                              :camera-trans (new 'static 'vector :x 0.0 :y 4096.0 :z 0.0 :w 1.0)
                                              :camera-rot (new 'static 'array float 9 1.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0)
                                              :load-commands '()
                                              :vis-nick 'none
-                                             :lev0 'beach
-                                             :disp0 'display
-                                             :lev1 'beach-additions
-                                             :disp1 'display
+                                             :lev0 'beach ;;The first level to be loaded (level order doesn't matter)
+                                             :disp0 'display ;;Leave as display
+                                             :lev1 'beach-additions ;;The second level to be loaded
+                                             :disp1 'display ;;Leave as display
                                              ))
                            :tasks '()
                            :priority 100
@@ -2083,8 +2084,8 @@
                            :alt-load-commands '()
                            :bsp-mask #xffffffffffffffff
                            :bsphere (new 'static 'sphere :w 167772160000.0)
-                           :bottom-height (meters -80)
-                           :run-packages '("common" "beach")
+                           :bottom-height (meters -80) ;;The height in which you die, make this lower than the lowest point
+                           :run-packages '()
                            :wait-for-load #t
                            )
         )

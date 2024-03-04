@@ -1057,9 +1057,10 @@
   "Is arg0 visible? Note that this will return #f if the visibility data is not loaded."
 
   (case (-> this name)
-    (('beach-additions
-    (return #t))
-  )
+    (('beach-additions)
+      (return #t)
+      )
+    )
 
   ;; og:preserve-this pc port added option to show every actor regardless
   (with-pc (if (not (-> *pc-settings* ps2-actor-vis?)) (return #t)))

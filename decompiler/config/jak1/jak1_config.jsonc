@@ -68,7 +68,7 @@
   "hexdump_code": false,
   "hexdump_data": false,
   // dump raw obj files
-  "dump_objs": true,
+  "dump_objs": false,
   // print control flow graph
   "print_cfgs": false,
 
@@ -103,7 +103,7 @@
   // turn this on to extract level background graphics data as .fr3 files in out/<game>/fr3
   "levels_extract": true,
   // turn this on if you want extracted levels to be saved out as .glb files in glb_out/<game>
-  "rip_levels": false,
+  "rip_levels": true,
   // should we also extract collision meshes to the .fr3 files?
   // these can be displayed in-game with the OpenGOAL collision renderer
   "extract_collision": true,

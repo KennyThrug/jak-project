@@ -1,7 +1,7 @@
 {
     "long_name": "beach-additions",
     "iso_name": "BEACHADD",
-    "nickname": "BCA",
+    "nickname": "bca",
     "gltf_file": "custom_levels/jak1/beach-additions/beach-additions.glb",
     
     "automatic_wall_detection": true,
@@ -13,29 +13,373 @@
     "ambients":[],
 
     "actors":[
+        //Powercells
         {
-            "trans": [-145.32,15.34,-449.19],
-            "etype": "launcher",
+            "trans": [-143.08,53.689,447.3], //X Y Z coordinates of entity
+            "etype": "fuel-cell", //Type of entity
             "game_task": 0,
             "quat":[0,0,0,1],
-            "bsphere":[-145.32,15.34,-449.19,10.0],
-            "lump":{
-                "name":"addition-plat-1",
-                "mode": "x101",
-                "spring-height": "125.0000",
-                "vis-dist": "200",
-                "visof": "display actor-vis!"
-            }
-        },
-        {
-            "trans": [-145.32,19.34,-449.19],
-            "etype": "fuel-cell",
-            "game_task": 0,
-            "quat":[0,0,0,1],
-            "bsphere":[-145.32,19.34,-449.19,10.0],
+            "bsphere":[-143.08,53.689,447.3,10.0],//Should be the same as trans
             "lump":{
                 "name":"addition-cell-1"
             }
-        }
+        },
+        //Precursor Orbs
+        {
+            "trans": [-149.66,53.991,-452.21], //X Y Z coordinates of entity
+            "etype": "money", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-149.66,53.991,-452.21,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-money-1"
+            }
+        },
+        {
+            "trans": [-149.66,53.991,-438.755], //X Y Z coordinates of entity
+            "etype": "money", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-149.66,53.991,-438.755,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-money-2"
+            }
+        },
+        {
+            "trans": [-155.442,53.991,-438.755], //X Y Z coordinates of entity
+            "etype": "money", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-155.442,53.991,-438.755,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-money-3"
+            }
+        },
+        {
+            "trans": [-155.442,53.991,-452.211], //X Y Z coordinates of entity
+            "etype": "money", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-155.442,53.991,-452.211,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-money-4"
+            }
+        },
+        //Crates
+        {
+            "trans": [-170,53.991,-452.211], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-170,53.991,-452.211,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-1",
+                "crate-type": "'wood"
+            }
+        },
+        {
+            "trans": [-175,53.991,-452.211], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-175,53.991,-452.211,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-3",
+                "crate-type": "'steel"
+            }
+        },
+        {
+            "trans": [-180,53.991,-452.211], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-180,53.991,-452.211,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-4",
+                "crate-type": "'bucket"
+            }
+        },
+        {
+            "trans": [-185,53.991,-452.211], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-185,53.991,-452.211,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-5",
+                "crate-type": "'barrel"
+            }
+        },
+        {
+            "trans": [-190,53.991,-452.211], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-190,53.991,-452.211,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-6",
+                "crate-type": "'darkeco"
+            }
+        },
+        {
+            "trans": [-195,53.991,-452.211], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-195,53.991,-452.211,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-2",
+                "crate-type": "'iron",
+                "eco-info":["int32",8,1]
+            }
+        },
+        {
+            "trans": [-170,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-170,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-7",
+                "crate-type": "'wood",
+                "eco-info":["int32",1,1]
+            }
+        },
+        {
+            "trans": [-175,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-175,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-8",
+                "crate-type": "'wood",
+                "eco-info":["int32",2,1]
+            }
+        },
+        {
+            "trans": [-180,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-180,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-9",
+                "crate-type": "'wood",
+                "eco-info":["int32",3,1]
+            }
+        },
+        {
+            "trans": [-185,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-185,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-10",
+                "crate-type": "'wood", //Wooden Crate
+                "eco-info":["int32",4,1] //Big Green Eco
+            }
+        },
+        {
+            "trans": [-190,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-190,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-11",
+                "crate-type": "wood",
+                "eco-info":["int32",5,1]
+            }
+        },
+        {
+            "trans": [-195,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-195,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-12",
+                "crate-type": "'steel",
+                "eco-info":["int32",6,1],
+                "movie_pos": ["meters",-200,53.991,-450]
+            }
+        },
+        {
+            "trans": [-200,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-200,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-13",
+                "crate-type": "wood",
+                "eco-info":["int32",7,1]
+            }
+        },
+        {
+            "trans": [-205,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-205,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-14",
+                "crate-type": "wood",
+                "eco-info":["int32",8,1]
+            }
+        },
+        {
+            "trans": [-210,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-210,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-15",
+                "crate-type": "wood",
+                "eco-info":["int32",9,1]
+            }
+        },
+        {
+            "trans": [-170,53.991,-425], //X Y Z coordinates of entity
+            "etype": "crate", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-170,53.991,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-crate-16",
+                "crate-type": "wood",
+                "eco-info":["int32",1,1]
+            }
+       },
+       //Eco
+       {
+        "trans": [-170,53.991,-440], //X Y Z coordinates of entity
+        "etype": "eco", //Type of entity
+        "game_task": 0,
+        "quat":[0,0,0,1],
+        "bsphere":[-170,53.991,-440,10.0],//Should be the same as trans
+        "lump":{
+            "name":"bea-eco-1",
+            "eco-info":["int32",1,1]
+            }
+        },
+        {
+        "trans": [-175,53.991,-440], //X Y Z coordinates of entity
+        "etype": "eco", //Type of entity
+        "game_task": 0,
+        "quat":[0,0,0,1],
+        "bsphere":[-175,53.991,-440,10.0],//Should be the same as trans
+        "lump":{
+            "name":"bea-eco-2",
+            "eco-info":["int32",2,1]
+            }
+        },
+        {
+        "trans": [-180,53.991,-440], //X Y Z coordinates of entity
+        "etype": "eco", //Type of entity
+        "game_task": 0,
+        "quat":[0,0,0,1],
+        "bsphere":[-180,53.991,-440,10.0],//Should be the same as trans
+        "lump":{
+            "name":"bea-eco-3",
+            "eco-info":["int32",3,1]
+            }
+        },
+        {
+        "trans": [-185,53.991,-440], //X Y Z coordinates of entity
+        "etype": "eco", //Type of entity
+        "game_task": 0,
+        "quat":[0,0,0,1],
+        "bsphere":[-185,53.991,-440,10.0],//Should be the same as trans
+        "lump":{
+            "name":"bea-eco-4",
+            "eco-info":["int32",4,1]
+            }
+        },
+        {
+        "trans": [-190,53.991,-440], //X Y Z coordinates of entity
+        "etype": "eco", //Type of entity
+        "game_task": 0,
+        "quat":[0,0,0,1],
+        "bsphere":[-190,53.991,-440,10.0],//Should be the same as trans
+        "lump":{
+            "name":"bea-eco-5",
+            "eco-info":["int32",7,5]
+            }
+        },
+        {
+            "trans": [-160,53.991,-430], //X Y Z coordinates of entity
+            "etype": "ecovent", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-160,53.991,-430,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-ecovent-1",
+                "eco-info":["int32",1,1],
+                "options": ["int32",5]
+            }
+        },
+        {
+            "trans": [-165,53.991,-430], //X Y Z coordinates of entity
+            "etype": "ecovent", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-165,53.991,-430,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-ecovent-2",
+                "eco-info":["int32",2,1],
+                "options": ["int32",5]
+            }
+        },
+        {
+            "trans": [-170,53.991,-430], //X Y Z coordinates of entity
+            "etype": "ecovent", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-170,53.991,-430,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-ecovent-3",
+                "eco-info":["int32",3,1],
+                "options": ["int32",5]
+            }
+        },
+        {
+            "trans": [-175,53.991,-430], //X Y Z coordinates of entity
+            "etype": "ecovent", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-175,53.991,-430,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-ecovent-4",
+                "eco-info":["int32",4,1],
+                "alt-actor": "bea-crate-1"
+            }
+        },
+        //Precursor Launcher
+        {
+            "trans": [-97.93,16.93,-447.84], //X Y Z coordinates of entity
+            "etype": "launcher", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-97.93,16.93,-447.84,10.0],//Should be the same as trans
+            "lump":{
+                "name":"launcher",
+                "spring-height": ["meters",260],
+                "alt-vector": ["vector4m",[-180,53.991,-440,5]]
+            }
+        },
+        {
+            "trans": [-170,57,-425], //X Y Z coordinates of entity
+            "etype": "plat", //Type of entity
+            "game_task": 0,
+            "quat":[0,0,0,1],
+            "bsphere":[-170,57,-425,10.0],//Should be the same as trans
+            "lump":{
+                "name":"bea-platform"
+            }
+       }
     ]
 }
