@@ -11,6 +11,10 @@
     "base_id": 103,
 
     "ambients":[],
+    "art_groups": [
+        "plat-flip-ag",
+        "eggtop-ag"
+    ],
 
     "actors":[
         //Powercells
@@ -373,7 +377,7 @@
         },
         {
             "trans": [-170,57,-425], //X Y Z coordinates of entity
-            "etype": "plat", //Type of entity
+            "etype": "plat-flip", //Type of entity
             "game_task": 0,
             "quat":[0,0,0,1],
             "bsphere":[-170,57,-425,10.0],//Should be the same as trans

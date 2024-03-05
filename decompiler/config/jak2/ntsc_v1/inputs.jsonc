@@ -456,7 +456,7 @@
   ],
 
   // tpages that should always be possible to access.
-  "common_tpages": [
+  "ages": [
     3219 // PRMINIMA progress-minimap
   ],
 
